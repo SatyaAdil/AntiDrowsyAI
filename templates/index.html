@@ -1,0 +1,96 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DrowsyGuard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100">
+
+  <div class="max-w-4xl mx-auto py-8 px-4">
+    <div class="text-center mb-6">
+      <h1 class="text-4xl font-bold text-gray-800">DrowsyGuard</h1>
+      <p class="text-gray-500 mt-2">Pantau kondisi pengemudi secara real-time</p>
+    </div>
+
+    <div class="flex justify-center mb-6">
+      <div class="rounded overflow-hidden shadow-lg border-4 border-red-300">
+        <img src="{{ url_for('video') }}" class="w-full" alt="Live Camera Feed" />
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow-lg">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold">📋 Log Peringatan</h2>
+        <button onclick="resetPeringatan()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow">
+          🔄 Reset Peringatan
+        </button>
+      </div>
+      <table class="table-auto w-full text-sm text-left text-gray-700">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2">Waktu</th>
+            <th class="px-4 py-2">Peringatan</th>
+          </tr>
+        </thead>
+        <tbody id="logTableBody">
+          <tr>
+            <td colspan="2" class="px-4 py-2 text-center text-gray-400">Memuat data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="text-center text-gray-400 text-sm mt-10">
+      &copy; 2025 DrowsyGuard AI. All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    function fetchLog() {
+      axios.get('/log')
+        .then(response => {
+          const logs = response.data;
+          const tbody = document.getElementById('logTableBody');
+          tbody.innerHTML = '';
+
+          if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2" class="text-center py-2 text-gray-400">Tidak ada peringatan</td></tr>';
+          } else {
+            logs.slice(-10).reverse().forEach(log => {
+              const row = `<tr>
+                <td class="px-4 py-1">${log.timestamp}</td>
+                <td class="px-4 py-1 text-red-600 font-semibold">${log.peringatan}</td>
+              </tr>`;
+              tbody.innerHTML += row;
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Gagal memuat log:', error);
+        });
+    }
+
+    function resetPeringatan() {
+      if (confirm("Apakah Anda yakin ingin me-reset semua peringatan?")) {
+        axios.get('/reset')
+          .then(response => {
+            alert(response.data.message);
+            fetchLog();
+          })
+          .catch(error => {
+            console.error('Gagal reset:', error);
+            alert("Terjadi kesalahan saat mereset.");
+          });
+      }
+    }
+
+    setInterval(fetchLog, 3000);
+    fetchLog();
+  </script>
+
+</body>
+</html>
